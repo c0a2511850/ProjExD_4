@@ -293,6 +293,26 @@ class Life:
             screen.blit(self.image,[WIDTH-50-40*i,HEIGHT-50])
 
 
+def emp(emys: pg.sprite.Group, bombs: pg.sprite.Group, screen: pg.Surface):
+    """
+    画面内の敵と爆弾を一定時間麻痺させる
+    """
+    for emy in emys:
+        emy.interval = 1000000000 # 爆弾を落とせなくする
+        # 見た目を少し黄色っぽくするなど（Surfaceをコピーしてブレンド）
+        emy.image = pg.transform.laplacian(emy.image) # 特殊エフェクト例
+    for bomb in bombs:
+        bomb.speed = 0 # 爆弾を止める
+        bomb.image.set_alpha(128) # 透明にするなど
+    
+    # EMP発動時の視覚効果（黄色いフラッシュ）
+    flash = pg.Surface((WIDTH, HEIGHT))
+    flash.set_alpha(100)
+    flash.fill((255, 255, 0))
+    screen.blit(flash, (0, 0))
+    pg.display.update()
+    time.sleep(0.05)
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -316,6 +336,11 @@ def main():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
                     beams.add(Beam(bird))
+                # 追加機能３：eキーでEMP発動
+                if event.key == pg.K_e:
+                    if score.value >= 20:
+                        score.value -= 20
+                        emp(emys, bombs, screen)
                 # 追加機能4：右Shiftキーで無敵状態発動
                 if event.key == pg.K_RSHIFT:
                     if score.value >= 100:
@@ -345,7 +370,7 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
-
+        
 
         # 追加機能4：無敵状態の衝突判定
         if bird.state == "hyper":
