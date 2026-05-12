@@ -313,33 +313,6 @@ def emp(emys: pg.sprite.Group, bombs: pg.sprite.Group, screen: pg.Surface):
     pg.display.update()
     time.sleep(0.05)
 
-class Shield(pg.sprite.Sprite):
-    """
-    防御壁に関するクラス
-    """
-    def __init__(self, bird: Bird, life: int):
-        super().__init__()
-        # 壁のサイズ (幅20, 高さはこうかとんの2倍)
-        self.image = pg.Surface((20, bird.rect.height * 2))
-        pg.draw.rect(self.image, (0, 0, 255), (0, 0, 20, bird.rect.height * 2)) # 青い壁
-        
-        # こうかとんの向きに合わせて回転
-        vx, vy = bird.dire
-        angle = math.degrees(math.atan2(-vy, vx))
-        self.image = pg.transform.rotozoom(self.image, angle, 1.0)
-        self.image.set_colorkey((0, 0, 0)) # 黒を透過
-
-        self.rect = self.image.get_rect()
-        # こうかとんの少し前に配置
-        self.rect.centerx = bird.rect.centerx + bird.rect.width * vx
-        self.rect.centery = bird.rect.centery + bird.rect.height * vy
-        self.life = life
-
-    def update(self):
-        self.life -= 1
-        if self.life < 0:
-            self.kill()
-
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -353,8 +326,6 @@ def main():
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
     gravities = pg.sprite.Group()  # 重力場グループの追加
-    shields = pg.sprite.Group() # 防御壁グループ
-
     tmr = 0
     clock = pg.time.Clock()
     while True:
@@ -376,12 +347,6 @@ def main():
                         score.value -= 100
                         bird.state = "hyper"
                         bird.hyper_life = 500
-                
-                # 追加機能５：sキーで防御壁発動
-                if event.key == pg.K_s:
-                    if score.value >= 40 and len(shields) == 0:
-                        score.value -= 40
-                        shields.add(Shield(bird, 400))
         screen.blit(bg_img, [0, 0])
 
         if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
@@ -399,7 +364,7 @@ def main():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():  # ビームと衝突した敵機リスト
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
-            score.value += 500  # 10点アップ
+            score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
@@ -413,14 +378,23 @@ def main():
                 exps.add(Explosion(bomb, 50))
                 score.value += 1
         else:
+
+            for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+                life.life_num -= 1 # Lifeを-1
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                if life.life_num <0:
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    return
         
-            for gravity in gravities:
-                # 重力場と衝突した敵機を殲滅
-                for emy in pg.sprite.spritecollide(gravity, emys, True):
-                    exps.add(Explosion(emy, 100))
-                # 重力場と衝突した爆弾を殲滅
-                for bomb in pg.sprite.spritecollide(gravity, bombs, True):
-                    exps.add(Explosion(bomb, 50))
+        for gravity in gravities:
+            # 重力場と衝突した敵機を殲滅
+            for emy in pg.sprite.spritecollide(gravity, emys, True):
+                exps.add(Explosion(emy, 100))
+            # 重力場と衝突した爆弾を殲滅
+            for bomb in pg.sprite.spritecollide(gravity, bombs, True):
+                exps.add(Explosion(bomb, 50))
                 
         bird.update(key_lst, screen)
         beams.update()
@@ -433,8 +407,6 @@ def main():
         exps.draw(screen)
         gravities.update()
         gravities.draw(screen)
-        shields.update() # 防御壁の更新
-        shields.draw(screen) # 防御壁の描画
         score.update(screen)
         life.update(screen)
         pg.display.update()
