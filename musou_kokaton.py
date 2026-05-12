@@ -101,6 +101,14 @@ class Bird(pg.sprite.Sprite):
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
+        if self.state == "hyper":
+            # 見た目を変える（laplacianフィルタなど）
+            self.image = pg.transform.laplacian(self.image)
+            # 残り時間を減らす
+            self.hyper_life -= 1
+            # 時間が切れたら通常状態に戻す
+            if self.hyper_life < 0:
+                self.state = "normal"
         screen.blit(self.image, self.rect)
 
 
