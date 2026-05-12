@@ -271,7 +271,7 @@ def main():
                     if score.value >= 100:
                         score.value -= 100
                         bird.state = "hyper"
-                        bird.hyper_life = 5
+                        bird.hyper_life = 500
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
