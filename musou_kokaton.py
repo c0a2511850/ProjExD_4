@@ -242,6 +242,26 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+def emp(emys: pg.sprite.Group, bombs: pg.sprite.Group, screen: pg.Surface):
+    """
+    画面内の敵と爆弾を一定時間麻痺させる
+    """
+    for emy in emys:
+        emy.interval = 1000000000 # 爆弾を落とせなくする
+        # 見た目を少し黄色っぽくするなど（Surfaceをコピーしてブレンド）
+        emy.image = pg.transform.laplacian(emy.image) # 特殊エフェクト例
+    for bomb in bombs:
+        bomb.speed = 0 # 爆弾を止める
+        bomb.image.set_alpha(128) # 透明にするなど
+    
+    # EMP発動時の視覚効果（黄色いフラッシュ）
+    flash = pg.Surface((WIDTH, HEIGHT))
+    flash.set_alpha(100)
+    flash.fill((255, 255, 0))
+    screen.blit(flash, (0, 0))
+    pg.display.update()
+    time.sleep(0.05)
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -261,8 +281,14 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    beams.add(Beam(bird))
+                # 追加機能３：eキーでEMP発動
+                if event.key == pg.K_e:
+                    if score.value >= 20:
+                        score.value -= 20
+                        emp(emys, bombs, screen)
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -288,7 +314,7 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
-
+        
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
